@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t mickzeller/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true mickzeller/react-test npm test
+
+after_success:
+  - docker build -t mickzeller/multi-client ./client
+  - docker build -t mickzeller/multi-nginx ./nginx
+  - docker build -t mickzeller/multi-server ./server
+  - docker build -t mickzeller/multi-worker ./worker
+  # Login to docker CLI - add environment variables in Travis
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take these images and push to docker hub
+  - docker push mickzeller/multi-client
+  - docker push mickzeller/multi-nginx
+  - docker push mickzeller/multi-server
+  - docker push mickzeller/multi-worker
